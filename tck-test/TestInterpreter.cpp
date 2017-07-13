@@ -10,6 +10,8 @@
 #include "tck-test/SingleSubscriber.h"
 #include "tck-test/TypedCommands.h"
 
+#include <folly/io/async/ScopedEventBaseThread.h>
+
 using namespace folly;
 using namespace yarpl;
 
@@ -18,8 +20,9 @@ namespace tck {
 
 TestInterpreter::TestInterpreter(
     const Test& test,
-    RSocketRequester* requester)
-    : requester_(requester), test_(test) {
+    RSocketRequester* requester,
+    std::shared_ptr<RSocketClient> client)
+    : requester_(requester), client_(client), test_(test) {
   DCHECK(!test.empty());
 }
 
@@ -48,6 +51,10 @@ bool TestInterpreter::run() {
       } else if (command.name() == "assert") {
         auto assert = command.as<AssertCommand>();
         handleAssert(assert);
+      } else if (command.name() == "disconnect") {
+        handleDisconnect();
+      } else if (command.name() == "resume") {
+        handleResume();
       } else {
         LOG(ERROR) << "unknown command " << command.name();
         throw std::runtime_error("unknown command");
@@ -93,6 +100,16 @@ void TestInterpreter::handleRequest(const RequestCommand& command) {
 
 void TestInterpreter::handleCancel(const CancelCommand& command) {
   getSubscriber(command.id())->cancel();
+}
+
+void TestInterpreter::handleDisconnect() {
+  LOG(INFO) << "Disconnecting the client";
+  client_->disconnect(std::runtime_error("disconnect triggered from client"));
+}
+
+void TestInterpreter::handleResume() {
+  LOG(INFO) << "Resuming the client";
+  client_->resume().get();
 }
 
 void TestInterpreter::handleAwait(const AwaitCommand& command) {
@@ -150,4 +167,4 @@ yarpl::Reference<BaseSubscriber> TestInterpreter::getSubscriber(
 }
 
 } // tck
-} // reactivesocket
+} // rsocket

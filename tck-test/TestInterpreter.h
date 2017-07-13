@@ -5,6 +5,7 @@
 #include <map>
 
 #include "src/Payload.h"
+#include "src/RSocket.h"
 #include "src/RSocketRequester.h"
 
 #include "tck-test/BaseSubscriber.h"
@@ -30,7 +31,8 @@ class TestInterpreter {
  public:
   TestInterpreter(
       const Test& test,
-      RSocketRequester* requester);
+      RSocketRequester* requester,
+      std::shared_ptr<RSocketClient> client);
 
   bool run();
 
@@ -40,10 +42,13 @@ class TestInterpreter {
   void handleAwait(const AwaitCommand& command);
   void handleCancel(const CancelCommand& command);
   void handleAssert(const AssertCommand& command);
+  void handleDisconnect();
+  void handleResume();
 
   yarpl::Reference<BaseSubscriber> getSubscriber(const std::string& id);
 
   RSocketRequester* requester_;
+  std::shared_ptr<RSocketClient> client_;
   const Test& test_;
   std::map<std::string, std::string> interactionIdToType_;
   std::map<std::string, yarpl::Reference<BaseSubscriber>> testSubscribers_;

@@ -40,8 +40,7 @@ int main(int argc, char* argv[]) {
 
   LOG(INFO) << "Creating client to connect to " << address.describe();
 
-  // create a client which can then make connections below
-  auto rsf = RSocket::createClient(
+  std::shared_ptr<RSocketClient> rsf = RSocket::createClient(
       std::make_unique<TcpConnectionFactory>(std::move(address)));
 
   // connect and wait for connection
@@ -59,9 +58,22 @@ int main(int argc, char* argv[]) {
     if (FLAGS_tests == "all" ||
         std::find(testsToRun.begin(), testsToRun.end(), test.name()) !=
             testsToRun.end()) {
+      bool passing = false;
+      if (test.resumption()) {
+        // create a new client for running test with resumption
+        std::shared_ptr<RSocketClient> rsf = RSocket::createClient(
+            std::make_unique<TcpConnectionFactory>(std::move(address)));
+        SetupParameters setupParameters;
+        setupParameters.resumable = true;
+        auto rs = rsf->connect(std::move(setupParameters)).get();
+        TestInterpreter interpreter(test, rs.get(), rsf);
+        passing = interpreter.run();
+      } else {
+        TestInterpreter interpreter(test, rs.get(), rsf);
+        passing = interpreter.run();
+      }
       ++ran;
-      TestInterpreter interpreter(test, rs.get());
-      bool passing = interpreter.run();
+
       if (passing) {
         ++passed;
       }

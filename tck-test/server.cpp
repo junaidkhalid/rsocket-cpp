@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
 
   TcpConnectionAcceptor::Options opts;
   opts.port = FLAGS_port;
-  opts.threads = 2;
+  opts.threads = 1;
 
   // RSocket server accepting on TCP
   auto rs = RSocket::createServer(
@@ -149,8 +149,10 @@ int main(int argc, char* argv[]) {
   auto rawRs = rs.get();
   auto serverThread = std::thread([=] {
     // start accepting connections
-    rawRs->startAndPark([responder](auto& setup) { setup.createRSocket(responder); });
+    rawRs->startAndPark([responder](auto& setup) {
+      setup.createRSocket(responder, ServerOptions(true)); });
   });
+
 
   terminate.get_future().wait();
   rs->unpark();

@@ -157,4 +157,4 @@ class AssertCommand : public TypedTestCommand {
 };
 
 } // tck
-} // reactivesocket
+} // rsocket
