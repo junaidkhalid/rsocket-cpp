@@ -10,8 +10,6 @@
 #include "tck-test/SingleSubscriber.h"
 #include "tck-test/TypedCommands.h"
 
-#include <folly/io/async/ScopedEventBaseThread.h>
-
 using namespace folly;
 using namespace yarpl;
 
